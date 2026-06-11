@@ -1,0 +1,1 @@
+ALTER TABLE `tags` ADD `kind` text DEFAULT 'tag' NOT NULL;

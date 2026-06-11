@@ -1,0 +1,95 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans text-base antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+  }
+
+  /* Visible focus ring on every interactive element (a11y floor). */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+    border-radius: 6px;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-1.5 rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg
+      transition-colors duration-fast hover:opacity-90 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-1.5 rounded-sm border border-subtle bg-transparent px-3 py-1.5 text-sm
+      font-medium text-ink-secondary transition-colors duration-fast hover:border-strong hover:text-ink
+      disabled:opacity-50;
+  }
+  .icon-btn {
+    @apply inline-flex h-7 w-7 items-center justify-center rounded-sm text-ink-muted transition-colors
+      duration-fast hover:bg-overlay hover:text-ink;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-subtle px-2 py-0.5 text-xs text-ink-secondary;
+  }
+  .card {
+    @apply rounded-md border border-subtle bg-raised shadow-1 transition-[border-color,box-shadow,background-color]
+      duration-fast hover:border-strong;
+  }
+  .input {
+    @apply w-full rounded-sm border border-subtle bg-raised px-2.5 py-1.5 text-base placeholder:text-ink-muted
+      focus:border-strong;
+  }
+  .label {
+    @apply text-xs font-medium uppercase tracking-wide text-ink-muted;
+  }
+}
+
+/* Command palette (cmdk) group headings */
+[cmdk-group-heading] {
+  @apply px-2.5 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-ink-muted;
+}
+
+/* Markdown preview */
+.prose-tn {
+  @apply text-base leading-relaxed;
+}
+.prose-tn h1 { @apply mb-2 mt-4 text-lg font-semibold; }
+.prose-tn h2 { @apply mb-2 mt-4 text-md font-semibold; }
+.prose-tn h3 { @apply mb-1 mt-3 text-base font-semibold; }
+.prose-tn p { @apply mb-2; }
+.prose-tn ul { @apply mb-2 list-disc pl-5; }
+.prose-tn ol { @apply mb-2 list-decimal pl-5; }
+.prose-tn li { @apply mb-0.5; }
+.prose-tn ul.contains-task-list { @apply list-none pl-1; }
+.prose-tn input[type="checkbox"] { @apply mr-1.5 accent-[var(--accent)]; }
+.prose-tn code { @apply rounded-sm bg-overlay px-1 py-0.5 font-mono text-sm; }
+.prose-tn pre { @apply mb-2 overflow-x-auto rounded-sm border border-subtle bg-overlay p-3; }
+.prose-tn blockquote { @apply mb-2 border-l-2 border-strong pl-3 text-ink-secondary; }
+.prose-tn a { @apply text-accent underline; }
+.prose-tn hr { @apply my-3 border-subtle; }
+.prose-tn strong { font-weight: var(--weight-semibold); }
