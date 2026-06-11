@@ -6,6 +6,7 @@ import { dbContext } from "./db/context.js";
 import { DATABASES } from "./db/databases.js";
 import { itemsRouter } from "./routes/items.js";
 import { tagsRouter } from "./routes/tags.js";
+import { pinsRouter } from "./routes/pins.js";
 import { assistantRouter } from "./routes/assistant.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -26,6 +27,7 @@ app.get("/api/databases", (_req, res) => {
 // Resolve the active database (X-Database header) for all data routes.
 app.use("/api/items", dbContext, itemsRouter);
 app.use("/api/tags", dbContext, tagsRouter);
+app.use("/api/pins", dbContext, pinsRouter);
 app.use("/api/assistant", dbContext, assistantRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

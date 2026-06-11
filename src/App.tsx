@@ -5,6 +5,7 @@ import { DatabaseSwitcher } from "./components/DatabaseSwitcher";
 import { BoardView } from "./components/Board";
 import { NotesGrid } from "./components/NotesGrid";
 import { TrashView } from "./components/TrashView";
+import { PinnedView } from "./components/PinnedView";
 import { DetailModal } from "./components/DetailModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { QuickCapture } from "./components/QuickCapture";
@@ -48,6 +49,7 @@ const VIEW_TITLES: Record<View, string> = {
   board: "Tasks",
   notes: "Notes",
   starred: "Starred",
+  pinned: "Pinned",
   trash: "Trash",
 };
 
@@ -169,7 +171,7 @@ export default function App() {
   // Pills: only buckets that actually occur in the current items, with counts.
   const buckets = useMemo(() => {
     const order = sortBuckets(sort);
-    if (!order || view === "trash") return null;
+    if (!order || view === "trash" || view === "pinned") return null;
     const counts = new Map<string, number>();
     for (const it of sorted) {
       const b = bucketOf(it, sort)!;
@@ -234,7 +236,9 @@ export default function App() {
               <DatabaseSwitcher onSwitch={onDatabaseSwitch} />
               <span className="h-5 w-px bg-[var(--border-subtle)]" />
               <h1 className="text-md font-semibold">{VIEW_TITLES[view]}</h1>
-              <span className="text-sm text-ink-muted">{visible.length}</span>
+              {view !== "pinned" && (
+                <span className="text-sm text-ink-muted">{visible.length}</span>
+              )}
               <div className="ml-auto flex min-w-0 items-center gap-2">
                 {buckets && (
                   <div
@@ -268,7 +272,7 @@ export default function App() {
                     )}
                   </div>
                 )}
-                {view !== "trash" && (
+                {view !== "trash" && view !== "pinned" && (
                   <label className="flex items-center gap-1.5 text-sm text-ink-muted">
                     Sort
                     <select
@@ -301,6 +305,8 @@ export default function App() {
                 <BoardView items={visible} loading={isLoading} />
               ) : view === "trash" ? (
                 <TrashView />
+              ) : view === "pinned" ? (
+                <PinnedView />
               ) : (
                 <NotesGrid items={visible} loading={isLoading} />
               )}

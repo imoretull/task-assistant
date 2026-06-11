@@ -47,5 +47,17 @@ export const itemTags = sqliteTable(
   })
 );
 
+// A pinned line/section of an item's body: `content` is a plain-text snapshot
+// of the pinned block, kept in sync by the editor while the item is edited.
+export const pins = sqliteTable("pins", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  itemId: text("item_id")
+    .notNull()
+    .references(() => items.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
 export type ItemRow = typeof items.$inferSelect;
 export type TagRow = typeof tags.$inferSelect;
+export type PinRow = typeof pins.$inferSelect;

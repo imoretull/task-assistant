@@ -93,3 +93,49 @@
 .prose-tn a { @apply text-accent underline; }
 .prose-tn hr { @apply my-3 border-subtle; }
 .prose-tn strong { font-weight: var(--weight-semibold); }
+.prose-tn table { @apply mb-2 w-full border-collapse text-sm; }
+.prose-tn th,
+.prose-tn td { @apply border border-subtle px-2 py-1 text-left align-top; }
+.prose-tn th { @apply bg-overlay font-medium; }
+
+/* Rich text editor (TipTap) */
+.rte-wrap:focus-within {
+  border-color: var(--border-strong);
+}
+.rte-scroll .ProseMirror {
+  min-height: 220px;
+  padding: 12px 56px 12px 12px; /* right gap keeps text clear of the hover pill */
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.rte-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--text-muted);
+}
+
+/* Interactive todo checklists */
+.rte-content ul[data-type="taskList"] { @apply mb-2 list-none pl-0.5; }
+.rte-content ul[data-type="taskList"] li { @apply mb-0.5 flex gap-2; }
+.rte-content ul[data-type="taskList"] li > label { @apply mt-[3px] shrink-0; }
+.rte-content ul[data-type="taskList"] li > div { @apply min-w-0 flex-1; }
+.rte-content ul[data-type="taskList"] li > div > p { @apply mb-0.5; }
+.rte-content ul[data-type="taskList"] li[data-checked="true"] > div > p {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.rte-content ul[data-type="taskList"] input[type="checkbox"] {
+  @apply cursor-pointer accent-[var(--accent)];
+}
+.rte-content ul[data-type="taskList"] ul[data-type="taskList"] { @apply mt-0.5 pl-1; }
+
+/* Pinned lines: soft accent wash + inset accent bar (reads in both themes) */
+.rte-content .pinned-block {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
+.rte-content li.pinned-block { @apply pl-1.5; }

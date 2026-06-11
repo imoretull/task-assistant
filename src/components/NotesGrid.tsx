@@ -1,8 +1,8 @@
 import { useUI } from "../App";
-import { useTags, useUpdateItem } from "../lib/queries";
-import { bodyPreview, formatDate, groupItems } from "../lib/filters";
+import { usePins, useTags, useUpdateItem } from "../lib/queries";
+import { bodyPreview, formatDate, groupItems, todoProgress } from "../lib/filters";
 import type { Item } from "../lib/types";
-import { Star } from "./icons";
+import { Pin, SquareCheck, Star } from "./icons";
 import { EmptyState, GroupDivider, Skeleton, StatusChip, TagChip } from "./ui";
 
 /** Card grid used by the Notes, All and Starred views. When a sort is active,
@@ -59,11 +59,14 @@ export function NotesGrid({ items, loading }: { items: Item[]; loading: boolean 
 function NoteCard({ item }: { item: Item }) {
   const ui = useUI();
   const { data: tags = [] } = useTags();
+  const { data: pins = [] } = usePins();
   const updateItem = useUpdateItem();
   const itemTags = tags.filter((t) => item.tags.includes(t.id));
   const selected = ui.selection.includes(item.id);
   const preview = bodyPreview(item.body);
   const extraTags = itemTags.length - 3;
+  const progress = todoProgress(item.body);
+  const pinCount = pins.filter((p) => p.itemId === item.id).length;
 
   return (
     <div
@@ -107,6 +110,25 @@ function NoteCard({ item }: { item: Item }) {
       {preview && <p className="line-clamp-3 text-sm text-ink-secondary">{preview}</p>}
 
       <div className="mt-auto flex flex-col gap-1.5 pt-1">
+        {(progress !== null || pinCount > 0) && (
+          <div className="flex items-center gap-2">
+            {progress !== null && (
+              <span
+                className={`chip ${progress.done === progress.total ? "text-[var(--status-done)]" : ""}`}
+                title={`${progress.done} of ${progress.total} todos done`}
+              >
+                <SquareCheck size={11} />
+                {progress.done}/{progress.total}
+              </span>
+            )}
+            {pinCount > 0 && (
+              <span className="chip" title={`${pinCount} pinned line${pinCount === 1 ? "" : "s"}`}>
+                <Pin size={11} />
+                {pinCount}
+              </span>
+            )}
+          </div>
+        )}
         {itemTags.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
             {itemTags.slice(0, 3).map((t) => (

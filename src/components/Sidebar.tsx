@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useUI } from "../App";
-import { useCreateTag, useDeleteTag, useItems, useTags, useUpdateTag } from "../lib/queries";
+import { useCreateTag, useDeleteTag, useItems, usePins, useTags, useUpdateTag } from "../lib/queries";
 import { tagCounts } from "../lib/filters";
 import type { Tag, TagKind, View } from "../lib/types";
-import { Board, Dots, Inbox, Layers, Note, Plus, Star, Trash, X } from "./icons";
+import { Board, Dots, Inbox, Layers, Note, Pin, Plus, Star, Trash, X } from "./icons";
 import { TAG_COLORS, tagDotColor } from "./ui";
 
 const NAV: { key: View; label: string; icon: typeof Board }[] = [
@@ -12,6 +12,7 @@ const NAV: { key: View; label: string; icon: typeof Board }[] = [
   { key: "board", label: "Tasks", icon: Board },
   { key: "notes", label: "Notes", icon: Note },
   { key: "starred", label: "Starred", icon: Star },
+  { key: "pinned", label: "Pinned", icon: Pin },
   { key: "trash", label: "Trash", icon: Trash },
 ];
 
@@ -26,6 +27,7 @@ export function Sidebar() {
   const ui = useUI();
   const { data: items = [] } = useItems();
   const { data: tags = [] } = useTags();
+  const { data: pins = [] } = usePins();
 
   const counts = useMemo(() => tagCounts(items), [items]);
   const navCounts: Record<View, number> = useMemo(
@@ -34,9 +36,10 @@ export function Sidebar() {
       board: items.filter((i) => i.status !== null).length,
       notes: items.filter((i) => i.type === "note" && i.status === null).length,
       starred: items.filter((i) => i.starred).length,
+      pinned: pins.length,
       trash: 0,
     }),
-    [items]
+    [items, pins]
   );
 
   return (

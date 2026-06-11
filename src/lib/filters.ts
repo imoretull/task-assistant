@@ -191,6 +191,14 @@ export function formatDate(iso: string | null): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+/** Checkbox progress in a markdown body, or null when it contains no todos. */
+export function todoProgress(body: string): { done: number; total: number } | null {
+  const boxes = body.match(/^\s*[-*+]\s+\[[ xX]\]/gm);
+  if (!boxes || boxes.length === 0) return null;
+  const done = boxes.filter((b) => /\[[xX]\]/.test(b)).length;
+  return { done, total: boxes.length };
+}
+
 export function bodyPreview(body: string, max = 180): string {
   const flat = body
     .replace(/```[\s\S]*?```/g, " ")

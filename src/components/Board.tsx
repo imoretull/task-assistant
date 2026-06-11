@@ -13,10 +13,10 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useUI } from "../App";
-import { useDeleteItem, useTags, useUpdateItem } from "../lib/queries";
-import { bodyPreview, formatDate, groupItems } from "../lib/filters";
+import { useDeleteItem, usePins, useTags, useUpdateItem } from "../lib/queries";
+import { bodyPreview, formatDate, groupItems, todoProgress } from "../lib/filters";
 import { STATUSES, type Item, type Status } from "../lib/types";
-import { Calendar, Star } from "./icons";
+import { Calendar, Pin, SquareCheck, Star } from "./icons";
 import { GroupDivider, PriorityChip, Skeleton, TagChip } from "./ui";
 
 export function BoardView({ items, loading }: { items: Item[]; loading: boolean }) {
@@ -184,11 +184,14 @@ function SortableTaskCard({ item }: { item: Item }) {
 export function TaskCard({ item, overlay = false }: { item: Item; overlay?: boolean }) {
   const ui = useUI();
   const { data: tags = [] } = useTags();
+  const { data: pins = [] } = usePins();
   const updateItem = useUpdateItem();
   const deleteItem = useDeleteItem();
   const itemTags = tags.filter((t) => item.tags.includes(t.id));
   const selected = ui.selection.includes(item.id);
   const extraTags = itemTags.length - 3;
+  const progress = todoProgress(item.body);
+  const pinCount = pins.filter((p) => p.itemId === item.id).length;
 
   const moveColumn = (dir: -1 | 1) => {
     if (!item.status) return;
@@ -250,6 +253,21 @@ export function TaskCard({ item, overlay = false }: { item: Item; overlay?: bool
             <span className="chip">
               <Calendar size={11} />
               {formatDate(item.dueDate)}
+            </span>
+          )}
+          {progress !== null && (
+            <span
+              className={`chip ${progress.done === progress.total ? "text-[var(--status-done)]" : ""}`}
+              title={`${progress.done} of ${progress.total} todos done`}
+            >
+              <SquareCheck size={11} />
+              {progress.done}/{progress.total}
+            </span>
+          )}
+          {pinCount > 0 && (
+            <span className="chip" title={`${pinCount} pinned line${pinCount === 1 ? "" : "s"}`}>
+              <Pin size={11} />
+              {pinCount}
             </span>
           )}
         </div>

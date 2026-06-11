@@ -40,8 +40,17 @@ seeded automatically at `data/app.db`.
 
 - **Board** — Backlog → Todo → In Progress → Blocked → Done. Drag between columns to
   change status, drag within a column to reorder, star to pin to the top.
-- **Notes** — Apple-Notes-style card grid. Markdown editor with live preview,
-  auto-saved (~500 ms debounce). A note converts to a task in one click (keeps its `N-` id).
+- **Notes** — Apple-Notes-style card grid. Rich-text editor (TipTap) with interactive
+  todo checklists, auto-saved (~500 ms debounce); content is stored as plain markdown.
+  A note converts to a task in one click (keeps its `N-` id).
+- **Line → task** — hover any line in a note or task and click ☑ to spin it off as a
+  task (inherits the item's tags); the line is stamped with the new task's id. Cards
+  show checkbox progress (`2/5`), so breaking work down stays visible on the board.
+- **Pinned lines** — hover a line and click the pin to flag it for quick reference.
+  Pinned lines are highlighted in the editor and collected in the **Pinned** view,
+  grouped by source item — pin decisions, blockers, or follow-ups mid-meeting and
+  find them instantly later. Pins follow edits to their line and unpin if the line
+  is deleted.
 - **Tags in three sections** — the sidebar groups tags into **Projects**, **People**,
   and **Tags** (each tag has a `kind`). Multi-select filtering across all sections
   (AND/OR toggle), full CRUD, counts everywhere, and a "Move to…" menu to re-section
@@ -63,7 +72,7 @@ seeded automatically at `data/app.db`.
 
 | Layer | Choice |
 |---|---|
-| Frontend | Vite + React + TypeScript, Tailwind CSS over CSS-variable design tokens, Radix UI primitives, `@dnd-kit`, TanStack Query, `react-markdown` |
+| Frontend | Vite + React + TypeScript, Tailwind CSS over CSS-variable design tokens, Radix UI primitives, `@dnd-kit`, TanStack Query, TipTap (+ `tiptap-markdown`), `react-markdown` |
 | Sidecar | Node + Express (owns the DB and the LLM key — the key never reaches the browser) |
 | Database | SQLite via **`@libsql/client`** (no native build) + **Drizzle ORM**, local file `data/app.db` |
 | LLM | `LLMProvider` interface → `MockProvider` (default) or `ClaudeProvider` |
@@ -118,7 +127,9 @@ why a note can become a task instantly and tags work uniformly.
 | `due_date`, `sort_order` | manual drag order persists in `sort_order` |
 | `created_at`, `updated_at`, `deleted_at` | soft delete → Trash |
 
-Plus `tags` (id, unique name, color) and `item_tags` (many-to-many).
+Plus `tags` (id, unique name, color) and `item_tags` (many-to-many), and `pins`
+(id, item_id, content, created_at) — each row is one pinned line of an item's body,
+stored as a plain-text snapshot that the editor keeps in sync while you type.
 
 ## The Assistant (LLM prompts)
 

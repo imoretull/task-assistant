@@ -15,7 +15,7 @@ import {
   STATUSES,
   type Item,
 } from "../lib/types";
-import { MarkdownEditor } from "./MarkdownEditor";
+import { RichTextEditor } from "./RichTextEditor";
 import { AssistantPanel } from "./AssistantPanel";
 import { Plus, Star, Trash, X } from "./icons";
 import { TagChip } from "./ui";
@@ -123,7 +123,8 @@ function DetailBody({ item }: { item: Item }) {
               }}
             />
           </Dialog.Title>
-          <MarkdownEditor
+          <RichTextEditor
+            item={item}
             value={body}
             onChange={(v) => {
               setBody(v);

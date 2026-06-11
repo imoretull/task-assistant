@@ -130,6 +130,18 @@ export const PanelLeft = (p: IconProps) => (
     <path d="M9 3v18" />
   </svg>
 );
+export const Pin = ({ filled, ...p }: IconProps & { filled?: boolean }) => (
+  <svg {...base(p)} fill={filled ? "currentColor" : "none"}>
+    <path d="M12 17v5" />
+    <path d="M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 2 2 0 000-4H8a2 2 0 000 4 1 1 0 011 1z" />
+  </svg>
+);
+export const SquareCheck = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M8 12l3 3 5-6" />
+  </svg>
+);
 export const ArrowRight = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M5 12h14M12 5l7 7-7 7" />

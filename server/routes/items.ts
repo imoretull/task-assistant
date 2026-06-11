@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { and, eq, isNull, isNotNull, max } from "drizzle-orm";
 import type { DB } from "../db/client.js";
-import { items, itemTags, type ItemRow } from "../db/schema.js";
+import { items, itemTags, pins, type ItemRow } from "../db/schema.js";
 import { nextId, normalizeId } from "../ids.js";
 
 export const itemsRouter = Router();
@@ -142,6 +142,7 @@ itemsRouter.delete("/:id/permanent", async (req, res) => {
   const existing = await loadItem(req.db, req.params.id);
   if (!existing) return res.status(404).json({ error: "Item not found" });
   await req.db.delete(itemTags).where(eq(itemTags.itemId, existing.id));
+  await req.db.delete(pins).where(eq(pins.itemId, existing.id));
   await req.db.delete(items).where(eq(items.id, existing.id));
   res.status(204).end();
 });
@@ -151,6 +152,7 @@ itemsRouter.post("/trash/empty", async (req, res) => {
   const trashed = await req.db.select().from(items).where(isNotNull(items.deletedAt));
   for (const t of trashed) {
     await req.db.delete(itemTags).where(eq(itemTags.itemId, t.id));
+    await req.db.delete(pins).where(eq(pins.itemId, t.id));
     await req.db.delete(items).where(eq(items.id, t.id));
   }
   res.json({ deleted: trashed.length });

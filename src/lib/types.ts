@@ -29,6 +29,17 @@ export interface Tag {
   kind: TagKind;
 }
 
+/** A pinned line/section of an item's body, for the Pinned quick-reference view. */
+export interface Pin {
+  id: number;
+  itemId: string;
+  content: string;
+  createdAt: string;
+  itemTitle: string;
+  itemType: ItemType;
+  itemStatus: Status | null;
+}
+
 export interface SavedPrompt {
   id: string;
   name: string;
@@ -69,5 +80,5 @@ export const DIFFICULTIES: { key: Difficulty; label: string }[] = [
   { key: "xl", label: "XL" },
 ];
 
-export type View = "all" | "board" | "notes" | "starred" | "trash";
+export type View = "all" | "board" | "notes" | "starred" | "pinned" | "trash";
 export type SortKey = "manual" | "priority" | "dueDate" | "difficulty" | "createdAt";

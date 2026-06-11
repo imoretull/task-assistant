@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useActiveDbId, type DatabaseMeta } from "./database";
-import type { AssistantResponse, Item, SavedPrompt, Tag } from "./types";
+import type { AssistantResponse, Item, Pin, SavedPrompt, Tag } from "./types";
 
 // All data query keys are namespaced by the active database id so caches are
 // atomic per database — switching never shows another database's rows.
 const itemsKey = (db: string) => ["db", db, "items"] as const;
 const trashKey = (db: string) => ["db", db, "trash"] as const;
 const tagsKey = (db: string) => ["db", db, "tags"] as const;
+const pinsKey = (db: string) => ["db", db, "pins"] as const;
 
 export function useDatabases() {
   return useQuery({
@@ -32,6 +33,40 @@ export function useTags() {
   return useQuery({ queryKey: tagsKey(db), queryFn: () => api<Tag[]>("/tags") });
 }
 
+export function usePins() {
+  const db = useActiveDbId();
+  return useQuery({ queryKey: pinsKey(db), queryFn: () => api<Pin[]>("/pins") });
+}
+
+export function useCreatePin() {
+  const qc = useQueryClient();
+  const db = useActiveDbId();
+  return useMutation({
+    mutationFn: (input: { itemId: string; content: string }) =>
+      api<Pin>("/pins", { method: "POST", body: JSON.stringify(input) }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pinsKey(db) }),
+  });
+}
+
+export function useUpdatePin() {
+  const qc = useQueryClient();
+  const db = useActiveDbId();
+  return useMutation({
+    mutationFn: ({ id, content }: { id: number; content: string }) =>
+      api<Pin>(`/pins/${id}`, { method: "PATCH", body: JSON.stringify({ content }) }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pinsKey(db) }),
+  });
+}
+
+export function useDeletePin() {
+  const qc = useQueryClient();
+  const db = useActiveDbId();
+  return useMutation({
+    mutationFn: (id: number) => api<void>(`/pins/${id}`, { method: "DELETE" }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: pinsKey(db) }),
+  });
+}
+
 export function usePrompts() {
   return useQuery({
     queryKey: ["prompts"],
@@ -46,6 +81,8 @@ function useInvalidate() {
   return () => {
     void qc.invalidateQueries({ queryKey: itemsKey(db) });
     void qc.invalidateQueries({ queryKey: trashKey(db) });
+    // Pins are joined against live items, so trash/restore/delete affects them.
+    void qc.invalidateQueries({ queryKey: pinsKey(db) });
   };
 }
 
