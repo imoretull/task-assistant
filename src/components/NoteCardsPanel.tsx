@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useUI } from "../App";
 import { useCreateItem, usePins, useTags, useUpdateItem } from "../lib/queries";
 import { bodyPreview, formatDate, todoProgress } from "../lib/filters";
 import type { Item } from "../lib/types";
-import { Note, Pin, Plus, SquareCheck, Star } from "./icons";
+import { Note, Pin, Plus, Search, SquareCheck, Star, X } from "./icons";
 import { TagChip } from "./ui";
 
 /**
@@ -16,8 +16,9 @@ import { TagChip } from "./ui";
 export function NoteCardsPanel({ items, loading }: { items: Item[]; loading: boolean }) {
   const ui = useUI();
   const createItem = useCreateItem();
+  const [query, setQuery] = useState("");
 
-  const notes = useMemo(
+  const allNotes = useMemo(
     () =>
       items
         .filter((it) => it.type === "note" && it.status === null)
@@ -28,21 +29,59 @@ export function NoteCardsPanel({ items, loading }: { items: Item[]; loading: boo
     [items]
   );
 
+  // Search matches the title and the note body (raw markdown, so it finds text
+  // anywhere — list items, links, code). Case-insensitive substring.
+  const notes = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allNotes;
+    return allNotes.filter(
+      (n) => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q)
+    );
+  }, [allNotes, query]);
+
   const newNote = () =>
     createItem.mutate(
       { type: "note", title: "", tags: ui.activeTagIds },
       { onSuccess: (item) => ui.openItem(item.id) }
     );
 
+  const searching = query.trim().length > 0;
+
   return (
     <aside aria-label="Notes" className="flex h-full flex-col bg-canvas">
-      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-subtle px-3">
-        <Note size={14} className="text-ink-muted" />
-        <span className="text-sm font-semibold">Notes</span>
-        <span className="text-sm text-ink-muted">{notes.length}</span>
-        <button className="btn-ghost ml-auto shrink-0 text-xs" onClick={newNote}>
-          <Plus size={12} /> New
-        </button>
+      <header className="shrink-0 border-b border-subtle">
+        <div className="flex h-11 items-center gap-2 px-3">
+          <Note size={14} className="text-ink-muted" />
+          <span className="text-sm font-semibold">Notes</span>
+          <span className="text-sm text-ink-muted">
+            {searching ? `${notes.length}/${allNotes.length}` : allNotes.length}
+          </span>
+          <button className="btn-ghost ml-auto shrink-0 text-xs" onClick={newNote}>
+            <Plus size={12} /> New
+          </button>
+        </div>
+        <div className="flex items-center gap-2 px-3 pb-2.5">
+          <div className="flex flex-1 items-center gap-2 rounded-md border border-subtle bg-raised px-2.5 py-1 focus-within:border-[var(--accent)]">
+            <Search size={13} className="shrink-0 text-ink-muted" />
+            <input
+              className="h-6 w-full bg-transparent text-sm outline-none placeholder:text-ink-muted"
+              placeholder="Search notes…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+              aria-label="Search notes by title and content"
+            />
+            {searching && (
+              <button
+                className="shrink-0 text-ink-muted hover:text-ink"
+                aria-label="Clear search"
+                onClick={() => setQuery("")}
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
@@ -54,7 +93,9 @@ export function NoteCardsPanel({ items, loading }: { items: Item[]; loading: boo
           </div>
         ) : notes.length === 0 ? (
           <p className="px-2 py-6 text-center text-sm text-ink-muted">
-            No notes yet. Capture a thought with “New”.
+            {searching
+              ? `No notes match “${query.trim()}”.`
+              : "No notes yet. Capture a thought with “New”."}
           </p>
         ) : (
           <div className="space-y-3">

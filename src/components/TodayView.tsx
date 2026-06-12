@@ -5,6 +5,7 @@ import type { Item } from "../lib/types";
 import { Inbox, Plus, SquareCheck } from "./icons";
 import { EmptyState, Skeleton, TAG_COLORS } from "./ui";
 import { TaskRow } from "./TaskRow";
+import { SortableList } from "./SortableList";
 
 /** "DMA - fix login test" → project shorthand "DMA" + title; "> task" → backlog. */
 function parseQuickAdd(raw: string): { title: string; toBacklog: boolean; project: string | null } {
@@ -178,11 +179,7 @@ export function TodayView({
               hint='Add ideas here, or send a task back from Today with "← Backlog".'
             />
           ) : (
-            <div className="space-y-1.5">
-              {backlog.map((item) => (
-                <TaskRow key={item.id} item={item} variant="backlog" />
-              ))}
-            </div>
+            <SortableList items={backlog} variant="backlog" />
           )
         ) : open.length === 0 && doneToday.length === 0 ? (
           <EmptyState
@@ -191,9 +188,8 @@ export function TodayView({
           />
         ) : (
           <div className="space-y-1.5">
-            {open.map((item) => (
-              <TaskRow key={item.id} item={item} variant="today" />
-            ))}
+            {/* Open tasks reorder by drag; done ones are fixed at the bottom. */}
+            <SortableList items={open} variant="today" />
             {doneToday.length > 0 && (
               <div className="pt-2" aria-hidden>
                 <span className="text-xs font-semibold uppercase tracking-wide text-ink-muted">

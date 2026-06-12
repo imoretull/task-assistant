@@ -18,9 +18,12 @@ import { tagDotColor, Tip } from "./ui";
 export function TaskRow({
   item,
   variant,
+  dragHandle,
 }: {
   item: Item;
   variant: "today" | "backlog" | "history";
+  /** When sortable, the grip handle to render at the row's left edge. */
+  dragHandle?: React.ReactNode;
 }) {
   const ui = useUI();
   const { data: tags = [] } = useTags();
@@ -54,6 +57,7 @@ export function TaskRow({
         carried > 0 ? "bg-accent-soft" : "bg-raised"
       } ${struck ? "opacity-55" : ""}`}
     >
+      {dragHandle}
       {variant === "today" && (
         <button
           aria-label={done ? "Mark not done" : "Mark done"}

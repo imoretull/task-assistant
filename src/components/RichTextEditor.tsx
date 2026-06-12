@@ -158,6 +158,7 @@ export function RichTextEditor({
   const createItem = useCreateItem();
 
   const wrapRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HoverInfo | null>(null);
   const [taskFlash, setTaskFlash] = useState<string | null>(null);
 
@@ -288,6 +289,10 @@ export function RichTextEditor({
 
   const onMouseMove = (e: React.MouseEvent) => {
     if (!editor) return;
+    // While the cursor is over the hover popover, freeze it — otherwise
+    // re-anchoring to the line underneath shifts the icons out from under the
+    // mouse before you can click the second one.
+    if (popoverRef.current?.contains(e.target as Node)) return;
     const found = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
     if (!found) return setHover(null);
     const info = resolveHover(editor.view, found.pos);
@@ -438,6 +443,7 @@ export function RichTextEditor({
         <EditorContent editor={editor} className="rte-scroll h-full" />
         {hover && hover.pinText && (
           <div
+            ref={popoverRef}
             className="absolute right-1.5 z-10 flex items-center gap-0.5 rounded-sm border border-subtle bg-popover p-0.5 shadow-1"
             style={{ top: Math.max(hover.top, 2) }}
             onMouseDown={(e) => e.preventDefault()}

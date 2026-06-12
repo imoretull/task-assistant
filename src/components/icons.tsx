@@ -153,6 +153,16 @@ export const ArrowLeft = (p: IconProps) => (
     <path d="M19 12H5M12 19l-7-7 7-7" />
   </svg>
 );
+export const Grip = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="9" cy="6" r="1" fill="currentColor" />
+    <circle cx="9" cy="12" r="1" fill="currentColor" />
+    <circle cx="9" cy="18" r="1" fill="currentColor" />
+    <circle cx="15" cy="6" r="1" fill="currentColor" />
+    <circle cx="15" cy="12" r="1" fill="currentColor" />
+    <circle cx="15" cy="18" r="1" fill="currentColor" />
+  </svg>
+);
 export const Sunrise = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M12 2v6M4.9 9.9l1.4 1.4M2 16h2m16 0h2m-4.3-4.7l1.4-1.4" />

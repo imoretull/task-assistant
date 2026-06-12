@@ -231,10 +231,16 @@ export default function App() {
                 </button>
               </Tip>
               <DatabaseSwitcher onSwitch={onDatabaseSwitch} />
-              <span className="h-5 w-px bg-[var(--border-subtle)]" />
-              <h1 className="text-md font-semibold">{VIEW_TITLES[view]}</h1>
-              {!leanView && (
-                <span className="text-sm text-ink-muted">{visible.length}</span>
+              {/* Today already shows the date + Today/Backlog toggle in-column,
+                  so the view title is redundant there. */}
+              {view !== "today" && (
+                <>
+                  <span className="h-5 w-px bg-[var(--border-subtle)]" />
+                  <h1 className="text-md font-semibold">{VIEW_TITLES[view]}</h1>
+                  {!leanView && (
+                    <span className="text-sm text-ink-muted">{visible.length}</span>
+                  )}
+                </>
               )}
               <div className="ml-auto flex min-w-0 items-center gap-2">
                 {buckets && (
