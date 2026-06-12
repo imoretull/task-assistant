@@ -7,7 +7,6 @@ import { DATABASES } from "./db/databases.js";
 import { itemsRouter } from "./routes/items.js";
 import { tagsRouter } from "./routes/tags.js";
 import { pinsRouter } from "./routes/pins.js";
-import { assistantRouter } from "./routes/assistant.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -16,7 +15,7 @@ app.use(cors({ exposedHeaders: ["X-Database"] }));
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, provider: (process.env.LLM_PROVIDER ?? "mock").toLowerCase() });
+  res.json({ ok: true });
 });
 
 // List the available databases for the header dropdown.
@@ -28,7 +27,6 @@ app.get("/api/databases", (_req, res) => {
 app.use("/api/items", dbContext, itemsRouter);
 app.use("/api/tags", dbContext, tagsRouter);
 app.use("/api/pins", dbContext, pinsRouter);
-app.use("/api/assistant", dbContext, assistantRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

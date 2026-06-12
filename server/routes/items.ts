@@ -1,14 +1,44 @@
 import { Router } from "express";
-import { and, eq, isNull, isNotNull, max } from "drizzle-orm";
+import { and, eq, ne, isNull, isNotNull, max } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { items, itemTags, pins, type ItemRow } from "../db/schema.js";
 import { nextId, normalizeId } from "../ids.js";
 
 export const itemsRouter = Router();
 
-const STATUSES = ["backlog", "todo", "in_progress", "blocked", "done"] as const;
+const STATUSES = ["backlog", "today", "done"] as const;
 const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 const DIFFICULTIES = ["xs", "s", "m", "l", "xl"] as const;
+
+// Reserved id of the per-database singleton scratchpad. Kept out of every list
+// (it has its own dedicated entry point) but editable/saveable like any item.
+const SCRATCH_ID = "SCRATCH";
+
+/** Local calendar date (YYYY-MM-DD) — the server and browser share a machine. */
+function localDate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+/** Carry-over bookkeeping for a status change: entering Today stamps the age
+ *  anchor, leaving for Backlog drops it ("guilt-free"), completing stamps the
+ *  History timestamp, and unchecking clears it again. */
+function statusPatch(from: ItemRow["status"], to: ItemRow["status"]): Record<string, unknown> {
+  if (from === to) return {};
+  switch (to) {
+    case "today":
+      // Un-completing keeps the original age; a pull from Backlog starts fresh.
+      return { status: to, completedAt: null, ...(from === "done" ? {} : { enteredToday: localDate() }) };
+    case "backlog":
+      return { status: to, enteredToday: null, completedAt: null };
+    case "done":
+      return { status: to, completedAt: new Date().toISOString() };
+    default: // task → note
+      return { status: null, enteredToday: null, completedAt: null };
+  }
+}
 
 type ItemWithTags = ItemRow & { tags: number[] };
 
@@ -50,11 +80,42 @@ async function nextSortOrder(db: DB, status: string | null): Promise<number> {
 // GET /api/items?trash=true → soft-deleted items
 itemsRouter.get("/", async (req, res) => {
   const trash = req.query.trash === "true";
+  // The scratchpad is never part of any list — it has its own entry point.
+  const liveOrTrash = trash ? isNotNull(items.deletedAt) : isNull(items.deletedAt);
   const rows = await req.db
     .select()
     .from(items)
-    .where(trash ? isNotNull(items.deletedAt) : isNull(items.deletedAt));
+    .where(and(liveOrTrash, ne(items.id, SCRATCH_ID)));
   res.json(await withTags(req.db, rows));
+});
+
+// GET /api/items/scratch → the per-database singleton scratchpad, created on
+// first access. A reserved-id note that "just retains"; excluded from lists.
+// Declared before "/:id" so "scratch" isn't read as an item id.
+itemsRouter.get("/scratch", async (req, res) => {
+  let item = await loadItem(req.db, SCRATCH_ID);
+  if (!item) {
+    const now = new Date().toISOString();
+    await req.db.insert(items).values({
+      id: SCRATCH_ID,
+      type: "note",
+      title: "Scratchpad",
+      body: "",
+      status: null,
+      priority: "medium",
+      difficulty: "m",
+      starred: false,
+      dueDate: null,
+      enteredToday: null,
+      completedAt: null,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    });
+    item = await loadItem(req.db, SCRATCH_ID);
+  }
+  res.json(item);
 });
 
 itemsRouter.get("/:id", async (req, res) => {
@@ -68,7 +129,7 @@ itemsRouter.post("/", async (req, res) => {
   const type = b.type === "task" ? "task" : "note";
   const status =
     type === "task"
-      ? STATUSES.includes(b.status) ? b.status : "todo"
+      ? STATUSES.includes(b.status) ? b.status : "today"
       : STATUSES.includes(b.status) ? b.status : null;
   const now = new Date().toISOString();
   const id = await nextId(req.db, type);
@@ -83,6 +144,8 @@ itemsRouter.post("/", async (req, res) => {
     difficulty: DIFFICULTIES.includes(b.difficulty) ? b.difficulty : "m",
     starred: Boolean(b.starred),
     dueDate: typeof b.dueDate === "string" && b.dueDate ? b.dueDate : null,
+    enteredToday: status === "today" ? localDate() : null,
+    completedAt: status === "done" ? now : null,
     sortOrder: await nextSortOrder(req.db, status),
     createdAt: now,
     updatedAt: now,
@@ -104,7 +167,9 @@ itemsRouter.patch("/:id", async (req, res) => {
   const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   if (typeof b.title === "string") patch.title = b.title;
   if (typeof b.body === "string") patch.body = b.body;
-  if (b.status === null || STATUSES.includes(b.status)) patch.status = b.status;
+  if (b.status === null || STATUSES.includes(b.status)) {
+    Object.assign(patch, statusPatch(existing.status, b.status));
+  }
   if (PRIORITIES.includes(b.priority)) patch.priority = b.priority;
   if (DIFFICULTIES.includes(b.difficulty)) patch.difficulty = b.difficulty;
   if (typeof b.starred === "boolean") patch.starred = b.starred;

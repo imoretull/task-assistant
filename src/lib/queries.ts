@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { useActiveDbId, type DatabaseMeta } from "./database";
-import type { AssistantResponse, Item, Pin, SavedPrompt, Tag } from "./types";
+import type { Item, Pin, Tag } from "./types";
 
 // All data query keys are namespaced by the active database id so caches are
 // atomic per database — switching never shows another database's rows.
@@ -26,6 +26,19 @@ export function useItems() {
 export function useTrash() {
   const db = useActiveDbId();
   return useQuery({ queryKey: trashKey(db), queryFn: () => api<Item[]>("/items?trash=true") });
+}
+
+const scratchKey = (db: string) => ["db", db, "scratch"] as const;
+
+/** The per-database singleton scratchpad note (created server-side on first
+ *  access). Kept out of the main items list, so it has its own query. */
+export function useScratchpad(enabled: boolean) {
+  const db = useActiveDbId();
+  return useQuery({
+    queryKey: scratchKey(db),
+    queryFn: () => api<Item>("/items/scratch"),
+    enabled,
+  });
 }
 
 export function useTags() {
@@ -64,14 +77,6 @@ export function useDeletePin() {
   return useMutation({
     mutationFn: (id: number) => api<void>(`/pins/${id}`, { method: "DELETE" }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: pinsKey(db) }),
-  });
-}
-
-export function usePrompts() {
-  return useQuery({
-    queryKey: ["prompts"],
-    queryFn: () => api<SavedPrompt[]>("/assistant/prompts"),
-    staleTime: Infinity,
   });
 }
 
@@ -119,6 +124,8 @@ export function useUpdateItem() {
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
+      // The scratchpad lives outside the items list but is edited via this hook.
+      void qc.invalidateQueries({ queryKey: scratchKey(db) });
     },
   });
 }
@@ -187,16 +194,5 @@ export function useDeleteTag() {
       void qc.invalidateQueries({ queryKey: tagsKey(db) });
       void qc.invalidateQueries({ queryKey: itemsKey(db) });
     },
-  });
-}
-
-export function useRunAssistant() {
-  return useMutation({
-    mutationFn: (input: {
-      promptId?: string;
-      promptText?: string;
-      itemIds?: string[];
-      tagIds?: number[];
-    }) => api<AssistantResponse>("/assistant", { method: "POST", body: JSON.stringify(input) }),
   });
 }

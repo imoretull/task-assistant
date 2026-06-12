@@ -14,11 +14,47 @@ export function matchesTags(item: Item, tagIds: number[], mode: "and" | "or"): b
     : tagIds.some((t) => item.tags.includes(t));
 }
 
+/** Local calendar date (YYYY-MM-DD) of an ISO timestamp or date string. */
+export function localDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+export function todayDay(): string {
+  return localDay(new Date().toISOString());
+}
+
+/** Whole days a task has been carried in Today (0 = added today / unknown). */
+export function carriedDays(item: Item): number {
+  if (!item.enteredToday) return 0;
+  return Math.max(0, -daysFromToday(item.enteredToday));
+}
+
+export function isDoneToday(item: Item): boolean {
+  return item.status === "done" && !!item.completedAt && localDay(item.completedAt) === todayDay();
+}
+
 export function filterItems(items: Item[], f: Filters): Item[] {
   let out = items.filter((it) => matchesTags(it, f.activeTagIds, f.tagMode));
   switch (f.view) {
-    case "board":
-      out = out.filter((it) => it.status !== null);
+    // Today owns the live queue: open tasks (carried ones included) plus
+    // anything finished today; finished tasks roll into History overnight.
+    // Standalone notes ride along too — the Today screen's note-cards rail
+    // renders them (the task column ignores them).
+    case "today":
+      out = out.filter(
+        (it) =>
+          it.status === "today" ||
+          it.status === "backlog" ||
+          isDoneToday(it) ||
+          (it.type === "note" && it.status === null)
+      );
+      break;
+    case "history":
+      out = out.filter((it) => it.status === "done" && !isDoneToday(it));
       break;
     case "notes":
       out = out.filter((it) => it.type === "note" && it.status === null);

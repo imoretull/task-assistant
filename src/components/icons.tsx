@@ -76,10 +76,11 @@ export const Calendar = (p: IconProps) => (
     <path d="M16 2v4M8 2v4M3 10h18" />
   </svg>
 );
-export const Board = (p: IconProps) => (
+export const History = (p: IconProps) => (
   <svg {...base(p)}>
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M9 3v18M15 3v18" />
+    <path d="M3 12a9 9 0 109-9 9.7 9.7 0 00-6.7 2.8L3 8" />
+    <path d="M3 3v5h5" />
+    <path d="M12 7v5l3.5 2" />
   </svg>
 );
 export const Note = (p: IconProps) => (
@@ -145,5 +146,27 @@ export const SquareCheck = (p: IconProps) => (
 export const ArrowRight = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+);
+export const ArrowLeft = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M19 12H5M12 19l-7-7 7-7" />
+  </svg>
+);
+export const Grip = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="9" cy="6" r="1" fill="currentColor" />
+    <circle cx="9" cy="12" r="1" fill="currentColor" />
+    <circle cx="9" cy="18" r="1" fill="currentColor" />
+    <circle cx="15" cy="6" r="1" fill="currentColor" />
+    <circle cx="15" cy="12" r="1" fill="currentColor" />
+    <circle cx="15" cy="18" r="1" fill="currentColor" />
+  </svg>
+);
+export const Sunrise = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 2v6M4.9 9.9l1.4 1.4M2 16h2m16 0h2m-4.3-4.7l1.4-1.4" />
+    <path d="M7 20a5 5 0 0110 0" />
+    <path d="M3 20h18" />
   </svg>
 );

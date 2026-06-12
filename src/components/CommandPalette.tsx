@@ -1,14 +1,16 @@
 import { Command } from "cmdk";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useUI } from "../App";
-import { useCreateItem, useItems, usePrompts } from "../lib/queries";
+import { useCreateItem, useItems } from "../lib/queries";
 import { toggleTheme } from "../lib/theme";
 import type { View } from "../lib/types";
-import { Board, Layers, Note, Plus, Search, Sparkle, Star, Sun, Trash } from "./icons";
+import { History, Layers, Note, Plus, Search, SquareCheck, Star, Sun, Trash } from "./icons";
 
-const VIEWS: { key: View; label: string; icon: typeof Board }[] = [
+
+const VIEWS: { key: View; label: string; icon: typeof Layers }[] = [
+  { key: "today", label: "Go to Today", icon: SquareCheck },
+  { key: "history", label: "Go to History", icon: History },
   { key: "all", label: "Go to All", icon: Layers },
-  { key: "board", label: "Go to Tasks board", icon: Board },
   { key: "notes", label: "Go to Notes", icon: Note },
   { key: "starred", label: "Go to Starred", icon: Star },
   { key: "trash", label: "Go to Trash", icon: Trash },
@@ -23,7 +25,6 @@ export function CommandPalette({
 }) {
   const ui = useUI();
   const { data: items = [] } = useItems();
-  const { data: prompts = [] } = usePrompts();
   const createItem = useCreateItem();
 
   const close = () => onOpenChange(false);
@@ -57,7 +58,7 @@ export function CommandPalette({
                   onSelect={() => {
                     close();
                     createItem.mutate(
-                      { type: "task", title: "", status: "todo" },
+                      { type: "task", title: "", status: "today" },
                       { onSuccess: (it) => ui.openItem(it.id) }
                     );
                   }}
@@ -111,29 +112,11 @@ export function CommandPalette({
                 </PaletteItem>
               </Command.Group>
 
-              <Command.Group heading="Saved prompts" className="cmdk-group">
-                {prompts.map((p) => (
-                  <PaletteItem
-                    key={p.id}
-                    icon={<Sparkle size={14} />}
-                    onSelect={close}
-                    value={`prompt ${p.name}`}
-                  >
-                    <span>
-                      {p.name}
-                      <span className="ml-2 text-xs text-ink-muted">
-                        open an item's Assistant panel to run
-                      </span>
-                    </span>
-                  </PaletteItem>
-                ))}
-              </Command.Group>
-
               <Command.Group heading="Jump to item" className="cmdk-group">
                 {items.slice(0, 60).map((it) => (
                   <PaletteItem
                     key={it.id}
-                    icon={it.status !== null ? <Board size={14} /> : <Note size={14} />}
+                    icon={it.status !== null ? <SquareCheck size={14} /> : <Note size={14} />}
                     value={`${it.id} ${it.title}`}
                     onSelect={() => {
                       ui.openItem(it.id);

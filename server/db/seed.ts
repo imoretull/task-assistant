@@ -4,11 +4,6 @@ import type { DB } from "./client.js";
 import type { DatabaseId } from "./databases.js";
 import { mainSeed } from "./seeds/main.js";
 import { demoSeed } from "./seeds/demo.js";
-import { reactDevSeed } from "./seeds/reactDev.js";
-import { qaSdetSeed } from "./seeds/qaSdet.js";
-import { scrumMasterSeed } from "./seeds/scrumMaster.js";
-import { teamManagerSeed } from "./seeds/teamManager.js";
-import { devopsSeed } from "./seeds/devops.js";
 
 export interface SeedTag {
   name: string;
@@ -21,14 +16,18 @@ export interface SeedItem {
   type: "task" | "note";
   title: string;
   body: string;
-  status: "backlog" | "todo" | "in_progress" | "blocked" | "done" | null;
-  priority: "low" | "medium" | "high" | "urgent";
-  difficulty: "xs" | "s" | "m" | "l" | "xl";
+  status: "backlog" | "today" | "done" | null;
+  priority?: "low" | "medium" | "high" | "urgent";
+  difficulty?: "xs" | "s" | "m" | "l" | "xl";
   starred?: boolean;
   dueDate?: string | null;
   sortOrder?: number;
   /** Day offset from "now" for created/updated timestamps (negative = past). */
   ageDays?: number;
+  /** Today tasks: days since the task entered Today (age badge). Default 0. */
+  carriedDays?: number;
+  /** Done tasks: days ago the task was completed (History day). Default 0. */
+  doneDaysAgo?: number;
   tags?: string[];
 }
 
@@ -40,11 +39,6 @@ export interface SeedData {
 const SEEDS: Record<DatabaseId, () => SeedData> = {
   main: mainSeed,
   demo: demoSeed,
-  "demo-react": reactDevSeed,
-  "demo-qa": qaSdetSeed,
-  "demo-scrum": scrumMasterSeed,
-  "demo-manager": teamManagerSeed,
-  "demo-devops": devopsSeed,
 };
 
 /** Seed a database from its definition, but only if it is currently empty.
@@ -77,6 +71,13 @@ export async function seedDatabase(id: DatabaseId, db: DB): Promise<void> {
     return v;
   };
 
+  const localDate = (offsetDays: number) => {
+    const d = new Date(now - offsetDays * 86_400_000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+  };
+
   const itemValues: (typeof schema.items.$inferInsert)[] = data.items.map((it) => {
     const ts = new Date(now + (it.ageDays ?? 0) * 86_400_000).toISOString();
     return {
@@ -85,10 +86,15 @@ export async function seedDatabase(id: DatabaseId, db: DB): Promise<void> {
       title: it.title,
       body: it.body,
       status: it.status,
-      priority: it.priority,
-      difficulty: it.difficulty,
+      priority: it.priority ?? "medium",
+      difficulty: it.difficulty ?? "m",
       starred: it.starred ?? false,
       dueDate: it.dueDate ?? null,
+      enteredToday: it.status === "today" ? localDate(it.carriedDays ?? 0) : null,
+      completedAt:
+        it.status === "done"
+          ? new Date(now - (it.doneDaysAgo ?? 0) * 86_400_000).toISOString()
+          : null,
       sortOrder: it.sortOrder ?? nextSort(it.status),
       createdAt: ts,
       updatedAt: ts,
