@@ -6,7 +6,7 @@ export const items = sqliteTable("items", {
   title: text("title").notNull().default(""),
   body: text("body").notNull().default(""),
   status: text("status", {
-    enum: ["backlog", "todo", "in_progress", "blocked", "done"],
+    enum: ["backlog", "today", "done"],
   }),
   priority: text("priority", { enum: ["low", "medium", "high", "urgent"] })
     .notNull()
@@ -16,6 +16,11 @@ export const items = sqliteTable("items", {
     .default("m"),
   starred: integer("starred", { mode: "boolean" }).notNull().default(false),
   dueDate: text("due_date"),
+  // Local date (YYYY-MM-DD) the task last entered Today — anchors the age
+  // badge. Null for backlog tasks and notes; reset on every backlog→today move.
+  enteredToday: text("entered_today"),
+  // ISO timestamp of completion — History groups done tasks by its local day.
+  completedAt: text("completed_at"),
   sortOrder: real("sort_order").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),

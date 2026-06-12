@@ -1,5 +1,5 @@
 export type ItemType = "task" | "note";
-export type Status = "backlog" | "todo" | "in_progress" | "blocked" | "done";
+export type Status = "backlog" | "today" | "done";
 export type Priority = "low" | "medium" | "high" | "urgent";
 export type Difficulty = "xs" | "s" | "m" | "l" | "xl";
 
@@ -13,6 +13,10 @@ export interface Item {
   difficulty: Difficulty;
   starred: boolean;
   dueDate: string | null;
+  /** Local date (YYYY-MM-DD) the task last entered Today — age badge anchor. */
+  enteredToday: string | null;
+  /** ISO timestamp of completion — History groups by its local day. */
+  completedAt: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -40,28 +44,9 @@ export interface Pin {
   itemStatus: Status | null;
 }
 
-export interface SavedPrompt {
-  id: string;
-  name: string;
-  description: string;
-  multi: boolean;
-  mode: "replace_body" | "text" | "suggest_tasks";
-}
-
-export interface AssistantResponse {
-  provider: string;
-  promptId: string | null;
-  mode: SavedPrompt["mode"];
-  itemIds: string[];
-  result: string;
-  suggestedTasks?: { title: string }[];
-}
-
 export const STATUSES: { key: Status; label: string }[] = [
   { key: "backlog", label: "Backlog" },
-  { key: "todo", label: "Todo" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "blocked", label: "Blocked" },
+  { key: "today", label: "Today" },
   { key: "done", label: "Done" },
 ];
 
@@ -80,5 +65,5 @@ export const DIFFICULTIES: { key: Difficulty; label: string }[] = [
   { key: "xl", label: "XL" },
 ];
 
-export type View = "all" | "board" | "notes" | "starred" | "pinned" | "trash";
+export type View = "today" | "history" | "all" | "notes" | "starred" | "pinned" | "trash";
 export type SortKey = "manual" | "priority" | "dueDate" | "difficulty" | "createdAt";

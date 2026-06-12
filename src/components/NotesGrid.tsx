@@ -62,7 +62,6 @@ function NoteCard({ item }: { item: Item }) {
   const { data: pins = [] } = usePins();
   const updateItem = useUpdateItem();
   const itemTags = tags.filter((t) => item.tags.includes(t.id));
-  const selected = ui.selection.includes(item.id);
   const preview = bodyPreview(item.body);
   const extraTags = itemTags.length - 3;
   const progress = todoProgress(item.body);
@@ -72,17 +71,12 @@ function NoteCard({ item }: { item: Item }) {
     <div
       role="button"
       tabIndex={0}
-      onClick={(e) => {
-        if (e.metaKey || e.ctrlKey) ui.toggleSelect(item.id);
-        else ui.openItem(item.id);
-      }}
+      onClick={() => ui.openItem(item.id)}
       onKeyDown={(e) => {
         if (e.key === "Enter") ui.openItem(item.id);
         else if (e.key === "s") updateItem.mutate({ id: item.id, starred: !item.starred });
       }}
-      className={`card group flex min-h-[176px] cursor-pointer select-none flex-col gap-2 p-4 text-left ${
-        selected ? "border-[var(--accent)] ring-1 ring-[var(--accent)]" : ""
-      }`}
+      className="card group flex min-h-[176px] cursor-pointer select-none flex-col gap-2 p-4 text-left"
     >
       {/* Top row: id + status + star */}
       <div className="flex items-center gap-2">

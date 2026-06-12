@@ -22,6 +22,13 @@
       "when": 1781149618970,
       "tag": "0002_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781227685047,
+      "tag": "0003_lean-statuses",
+      "breakpoints": true
     }
   ]
 }

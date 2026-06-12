@@ -6,9 +6,35 @@ import { nextId, normalizeId } from "../ids.js";
 
 export const itemsRouter = Router();
 
-const STATUSES = ["backlog", "todo", "in_progress", "blocked", "done"] as const;
+const STATUSES = ["backlog", "today", "done"] as const;
 const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 const DIFFICULTIES = ["xs", "s", "m", "l", "xl"] as const;
+
+/** Local calendar date (YYYY-MM-DD) — the server and browser share a machine. */
+function localDate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+/** Carry-over bookkeeping for a status change: entering Today stamps the age
+ *  anchor, leaving for Backlog drops it ("guilt-free"), completing stamps the
+ *  History timestamp, and unchecking clears it again. */
+function statusPatch(from: ItemRow["status"], to: ItemRow["status"]): Record<string, unknown> {
+  if (from === to) return {};
+  switch (to) {
+    case "today":
+      // Un-completing keeps the original age; a pull from Backlog starts fresh.
+      return { status: to, completedAt: null, ...(from === "done" ? {} : { enteredToday: localDate() }) };
+    case "backlog":
+      return { status: to, enteredToday: null, completedAt: null };
+    case "done":
+      return { status: to, completedAt: new Date().toISOString() };
+    default: // task → note
+      return { status: null, enteredToday: null, completedAt: null };
+  }
+}
 
 type ItemWithTags = ItemRow & { tags: number[] };
 
@@ -68,7 +94,7 @@ itemsRouter.post("/", async (req, res) => {
   const type = b.type === "task" ? "task" : "note";
   const status =
     type === "task"
-      ? STATUSES.includes(b.status) ? b.status : "todo"
+      ? STATUSES.includes(b.status) ? b.status : "today"
       : STATUSES.includes(b.status) ? b.status : null;
   const now = new Date().toISOString();
   const id = await nextId(req.db, type);
@@ -83,6 +109,8 @@ itemsRouter.post("/", async (req, res) => {
     difficulty: DIFFICULTIES.includes(b.difficulty) ? b.difficulty : "m",
     starred: Boolean(b.starred),
     dueDate: typeof b.dueDate === "string" && b.dueDate ? b.dueDate : null,
+    enteredToday: status === "today" ? localDate() : null,
+    completedAt: status === "done" ? now : null,
     sortOrder: await nextSortOrder(req.db, status),
     createdAt: now,
     updatedAt: now,
@@ -104,7 +132,9 @@ itemsRouter.patch("/:id", async (req, res) => {
   const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   if (typeof b.title === "string") patch.title = b.title;
   if (typeof b.body === "string") patch.body = b.body;
-  if (b.status === null || STATUSES.includes(b.status)) patch.status = b.status;
+  if (b.status === null || STATUSES.includes(b.status)) {
+    Object.assign(patch, statusPatch(existing.status, b.status));
+  }
   if (PRIORITIES.includes(b.priority)) patch.priority = b.priority;
   if (DIFFICULTIES.includes(b.difficulty)) patch.difficulty = b.difficulty;
   if (typeof b.starred === "boolean") patch.starred = b.starred;

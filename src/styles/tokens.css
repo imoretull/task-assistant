@@ -60,6 +60,7 @@
   --priority-urgent: #c4554d;
 
   --status-backlog: #8a93a3;
+  --status-today: #5b8ac4;
   --status-todo: #5b8ac4;
   --status-in_progress: #b98a2e;
   --status-blocked: #c4554d;
@@ -99,6 +100,7 @@
   --priority-urgent: #d8736b;
 
   --status-backlog: #99a2b1;
+  --status-today: #7aa3d6;
   --status-todo: #7aa3d6;
   --status-in_progress: #cfa14a;
   --status-blocked: #d8736b;

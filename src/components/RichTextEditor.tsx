@@ -327,7 +327,7 @@ export function RichTextEditor({
     const text = hover.lineText || hover.pinText;
     if (!text) return;
     createItem.mutate(
-      { type: "task", title: text.slice(0, 200), status: "todo", tags: item.tags },
+      { type: "task", title: text.slice(0, 200), status: "today", tags: item.tags },
       {
         onSuccess: (task) => {
           // Stamp the source line with the new task's id so the link is visible.

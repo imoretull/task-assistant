@@ -4,12 +4,13 @@ import { useUI } from "../App";
 import { useCreateTag, useDeleteTag, useItems, usePins, useTags, useUpdateTag } from "../lib/queries";
 import { tagCounts } from "../lib/filters";
 import type { Tag, TagKind, View } from "../lib/types";
-import { Board, Dots, Inbox, Layers, Note, Pin, Plus, Star, Trash, X } from "./icons";
+import { Dots, History, Inbox, Layers, Note, Pin, Plus, Star, SquareCheck, Trash, X } from "./icons";
 import { TAG_COLORS, tagDotColor } from "./ui";
 
-const NAV: { key: View; label: string; icon: typeof Board }[] = [
+const NAV: { key: View; label: string; icon: typeof Layers }[] = [
+  { key: "today", label: "Today", icon: SquareCheck },
+  { key: "history", label: "History", icon: History },
   { key: "all", label: "All", icon: Layers },
-  { key: "board", label: "Tasks", icon: Board },
   { key: "notes", label: "Notes", icon: Note },
   { key: "starred", label: "Starred", icon: Star },
   { key: "pinned", label: "Pinned", icon: Pin },
@@ -32,8 +33,10 @@ export function Sidebar() {
   const counts = useMemo(() => tagCounts(items), [items]);
   const navCounts: Record<View, number> = useMemo(
     () => ({
+      // Today counts only the open queue — done/carried detail lives in-view.
+      today: items.filter((i) => i.status === "today").length,
+      history: 0,
       all: items.length,
-      board: items.filter((i) => i.status !== null).length,
       notes: items.filter((i) => i.type === "note" && i.status === null).length,
       starred: items.filter((i) => i.starred).length,
       pinned: pins.length,
@@ -64,7 +67,7 @@ export function Sidebar() {
           >
             <Icon size={15} className={ui.view === key ? "text-accent" : "text-ink-muted"} />
             {label}
-            {key !== "trash" && (
+            {key !== "trash" && key !== "history" && (
               <span className="ml-auto text-xs text-ink-muted">{navCounts[key]}</span>
             )}
           </button>
