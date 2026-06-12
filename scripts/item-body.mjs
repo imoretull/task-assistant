@@ -10,6 +10,10 @@
  *   node scripts/item-body.mjs set T-0012 [--db main] [--title "…"]
  *       → reads the new body from stdin, writes it (and optional --title)
  *
+ *   node scripts/item-body.mjs list-today [--db main]
+ *       → prints the open Today tasks (status 'today', not done) as a JSON
+ *         array of { id, type, title, body } — used by /cleanup-today
+ *
  * DB ids: main → data/app.db, demo → data/demo.db (see server/db/databases.ts).
  * Body is stored as raw markdown, exactly as the editor saves it.
  */
@@ -24,7 +28,12 @@ function normalizeId(raw) {
 }
 
 function parseArgs(argv) {
-  const [cmd, rawId, ...rest] = argv;
+  const [cmd, ...tail] = argv;
+  // list-today takes no id; get/set take one. Pull a leading non-flag token as
+  // the id only when it isn't a flag.
+  let rawId;
+  const rest = [...tail];
+  if (rest.length && !rest[0].startsWith("--")) rawId = rest.shift();
   const opts = { db: "main", title: undefined };
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === "--db") opts.db = rest[++i];
@@ -39,15 +48,24 @@ function die(msg) {
 }
 
 const { cmd, rawId, opts } = parseArgs(process.argv.slice(2));
-if (!cmd || !rawId) die('usage: item-body.mjs <get|set> <id> [--db main|demo] [--title "…"]');
+if (!cmd || (cmd !== "list-today" && !rawId)) {
+  die('usage: item-body.mjs <get|set|list-today> [id] [--db main|demo] [--title "…"]');
+}
 
 const file = DB_FILES[opts.db];
 if (!file) die(`unknown --db "${opts.db}" (expected: ${Object.keys(DB_FILES).join(", ")})`);
 
-const id = normalizeId(rawId);
+const id = rawId ? normalizeId(rawId) : undefined;
 const client = createClient({ url: `file:data/${file}` });
 
-if (cmd === "get") {
+if (cmd === "list-today") {
+  const res = await client.execute({
+    sql: "select id, type, title, body from items where status = 'today' and deleted_at is null order by sort_order",
+    args: [],
+  });
+  const rows = res.rows.map((r) => ({ id: r.id, type: r.type, title: r.title, body: r.body }));
+  process.stdout.write(JSON.stringify(rows, null, 2));
+} else if (cmd === "get") {
   const res = await client.execute({
     sql: "select id, type, title, body from items where id = ? and deleted_at is null",
     args: [id],
