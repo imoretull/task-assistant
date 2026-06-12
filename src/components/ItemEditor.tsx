@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useUI } from "../App";
 import { useDeleteItem, useUpdateItem } from "../lib/queries";
 import { carriedDays } from "../lib/filters";
-import { DIFFICULTIES, PRIORITIES, type Item } from "../lib/types";
+import { DIFFICULTIES, PRIORITIES, isScratch, type Item } from "../lib/types";
 import { RichTextEditor } from "./RichTextEditor";
-import { ArrowLeft, ArrowRight, SquareCheck, Star, Trash, X } from "./icons";
+import { ArrowLeft, ArrowRight, Note, SquareCheck, Star, Trash, X } from "./icons";
 import { TagPicker } from "./TagPicker";
 import { Tip } from "./ui";
 
@@ -19,6 +19,7 @@ export function ItemEditor({ item }: { item: Item }) {
   const ui = useUI();
   const updateItem = useUpdateItem();
   const deleteItem = useDeleteItem();
+  const scratch = isScratch(item);
   const isNote = item.status === null;
 
   // Local draft + ~500ms debounced autosave for title/body (write-and-forget).
@@ -60,8 +61,14 @@ export function ItemEditor({ item }: { item: Item }) {
       className="flex h-full min-w-0 flex-1 flex-col bg-raised"
     >
       <header className="flex h-11 shrink-0 items-center gap-2.5 border-b border-subtle px-4">
-        <span className="font-mono text-sm text-ink-muted">{item.id}</span>
-        {isNote ? (
+        {scratch ? (
+          <span className="flex items-center gap-1.5 text-sm font-medium text-ink-secondary">
+            <Note size={14} className="text-accent" /> Scratchpad
+          </span>
+        ) : (
+          <span className="font-mono text-sm text-ink-muted">{item.id}</span>
+        )}
+        {scratch ? null : isNote ? (
           <span className="chip text-ink-secondary">Note</span>
         ) : (
           <span className="chip" style={{ color: `var(--status-${item.status})` }}>
@@ -75,7 +82,7 @@ export function ItemEditor({ item }: { item: Item }) {
         )}
         <span className="text-xs text-ink-muted">{saved ? "Saved" : "Saving…"}</span>
         <div className="ml-auto flex items-center gap-1">
-          {isNote && (
+          {isNote && !scratch && (
             <Tip label={item.starred ? "Unstar" : "Star"}>
               <button
                 className={`icon-btn ${item.starred ? "text-[var(--priority-high)]" : ""}`}
@@ -86,18 +93,21 @@ export function ItemEditor({ item }: { item: Item }) {
               </button>
             </Tip>
           )}
-          <Tip label="Move to trash">
-            <button
-              className="icon-btn"
-              aria-label="Move to trash"
-              onClick={() => {
-                deleteItem.mutate(item.id);
-                ui.openItem(null);
-              }}
-            >
-              <Trash size={14} />
-            </button>
-          </Tip>
+          {/* The scratchpad just retains — no trash (it can't be deleted). */}
+          {!scratch && (
+            <Tip label="Move to trash">
+              <button
+                className="icon-btn"
+                aria-label="Move to trash"
+                onClick={() => {
+                  deleteItem.mutate(item.id);
+                  ui.openItem(null);
+                }}
+              >
+                <Trash size={14} />
+              </button>
+            </Tip>
+          )}
           <button className="icon-btn" aria-label="Close" onClick={() => ui.openItem(null)}>
             <X size={15} />
           </button>
@@ -105,17 +115,24 @@ export function ItemEditor({ item }: { item: Item }) {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-        <input
-          className="w-full bg-transparent text-lg font-semibold outline-none placeholder:text-ink-muted"
-          placeholder="Untitled"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            queueSave();
-          }}
-        />
+        {scratch ? (
+          <p className="text-sm text-ink-muted">
+            A quick rough-notes pad. Whatever you type here is kept — jot freely.
+          </p>
+        ) : (
+          <input
+            className="w-full bg-transparent text-lg font-semibold outline-none placeholder:text-ink-muted"
+            placeholder="Untitled"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              queueSave();
+            }}
+          />
+        )}
 
-        {/* Action row — adapts to task vs note. */}
+        {/* Action row — adapts to task vs note. Hidden for the scratchpad. */}
+        {!scratch && (
         <div className="flex flex-wrap items-center gap-2">
           <TagPicker item={item} />
           {item.status === "today" && (
@@ -143,9 +160,10 @@ export function ItemEditor({ item }: { item: Item }) {
             </button>
           )}
         </div>
+        )}
 
         {/* Notes carry priority/difficulty/due metadata (tasks stay lean). */}
-        {isNote && (
+        {isNote && !scratch && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-subtle bg-overlay px-3 py-2">
             <label className="flex items-center gap-1.5 text-xs text-ink-muted">
               Priority
@@ -201,10 +219,12 @@ export function ItemEditor({ item }: { item: Item }) {
         />
       </div>
 
-      <footer className="shrink-0 space-y-0.5 border-t border-subtle px-4 py-2 text-xs text-ink-muted">
-        <p>Created {new Date(item.createdAt).toLocaleString()}</p>
-        {item.completedAt && <p>Completed {new Date(item.completedAt).toLocaleString()}</p>}
-      </footer>
+      {!scratch && (
+        <footer className="shrink-0 space-y-0.5 border-t border-subtle px-4 py-2 text-xs text-ink-muted">
+          <p>Created {new Date(item.createdAt).toLocaleString()}</p>
+          {item.completedAt && <p>Completed {new Date(item.completedAt).toLocaleString()}</p>}
+        </footer>
+      )}
     </section>
   );
 }

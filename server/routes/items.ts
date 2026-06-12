@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, eq, isNull, isNotNull, max } from "drizzle-orm";
+import { and, eq, ne, isNull, isNotNull, max } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { items, itemTags, pins, type ItemRow } from "../db/schema.js";
 import { nextId, normalizeId } from "../ids.js";
@@ -9,6 +9,10 @@ export const itemsRouter = Router();
 const STATUSES = ["backlog", "today", "done"] as const;
 const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 const DIFFICULTIES = ["xs", "s", "m", "l", "xl"] as const;
+
+// Reserved id of the per-database singleton scratchpad. Kept out of every list
+// (it has its own dedicated entry point) but editable/saveable like any item.
+const SCRATCH_ID = "SCRATCH";
 
 /** Local calendar date (YYYY-MM-DD) — the server and browser share a machine. */
 function localDate(): string {
@@ -76,11 +80,42 @@ async function nextSortOrder(db: DB, status: string | null): Promise<number> {
 // GET /api/items?trash=true → soft-deleted items
 itemsRouter.get("/", async (req, res) => {
   const trash = req.query.trash === "true";
+  // The scratchpad is never part of any list — it has its own entry point.
+  const liveOrTrash = trash ? isNotNull(items.deletedAt) : isNull(items.deletedAt);
   const rows = await req.db
     .select()
     .from(items)
-    .where(trash ? isNotNull(items.deletedAt) : isNull(items.deletedAt));
+    .where(and(liveOrTrash, ne(items.id, SCRATCH_ID)));
   res.json(await withTags(req.db, rows));
+});
+
+// GET /api/items/scratch → the per-database singleton scratchpad, created on
+// first access. A reserved-id note that "just retains"; excluded from lists.
+// Declared before "/:id" so "scratch" isn't read as an item id.
+itemsRouter.get("/scratch", async (req, res) => {
+  let item = await loadItem(req.db, SCRATCH_ID);
+  if (!item) {
+    const now = new Date().toISOString();
+    await req.db.insert(items).values({
+      id: SCRATCH_ID,
+      type: "note",
+      title: "Scratchpad",
+      body: "",
+      status: null,
+      priority: "medium",
+      difficulty: "m",
+      starred: false,
+      dueDate: null,
+      enteredToday: null,
+      completedAt: null,
+      sortOrder: 0,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    });
+    item = await loadItem(req.db, SCRATCH_ID);
+  }
+  res.json(item);
 });
 
 itemsRouter.get("/:id", async (req, res) => {

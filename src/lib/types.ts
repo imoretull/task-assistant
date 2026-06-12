@@ -67,3 +67,11 @@ export const DIFFICULTIES: { key: Difficulty; label: string }[] = [
 
 export type View = "today" | "history" | "all" | "notes" | "starred" | "pinned" | "trash";
 export type SortKey = "manual" | "priority" | "dueDate" | "difficulty" | "createdAt";
+
+/** Reserved id of the per-database singleton scratchpad — a single always-on
+ *  rough-notes surface that just retains. Excluded from every list view. */
+export const SCRATCH_ID = "SCRATCH";
+
+export function isScratch(item: Pick<Item, "id">): boolean {
+  return item.id === SCRATCH_ID;
+}

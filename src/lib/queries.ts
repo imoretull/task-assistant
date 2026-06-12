@@ -28,6 +28,19 @@ export function useTrash() {
   return useQuery({ queryKey: trashKey(db), queryFn: () => api<Item[]>("/items?trash=true") });
 }
 
+const scratchKey = (db: string) => ["db", db, "scratch"] as const;
+
+/** The per-database singleton scratchpad note (created server-side on first
+ *  access). Kept out of the main items list, so it has its own query. */
+export function useScratchpad(enabled: boolean) {
+  const db = useActiveDbId();
+  return useQuery({
+    queryKey: scratchKey(db),
+    queryFn: () => api<Item>("/items/scratch"),
+    enabled,
+  });
+}
+
 export function useTags() {
   const db = useActiveDbId();
   return useQuery({ queryKey: tagsKey(db), queryFn: () => api<Tag[]>("/tags") });
@@ -111,6 +124,8 @@ export function useUpdateItem() {
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
+      // The scratchpad lives outside the items list but is edited via this hook.
+      void qc.invalidateQueries({ queryKey: scratchKey(db) });
     },
   });
 }

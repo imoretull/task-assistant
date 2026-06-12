@@ -3,6 +3,7 @@ import { useUI } from "../App";
 import { useCreateItem, usePins, useTags, useUpdateItem } from "../lib/queries";
 import { bodyPreview, formatDate, todoProgress } from "../lib/filters";
 import type { Item } from "../lib/types";
+import { SCRATCH_ID } from "../lib/types";
 import { Note, Pin, Plus, Search, SquareCheck, Star, X } from "./icons";
 import { TagChip } from "./ui";
 
@@ -83,6 +84,20 @@ export function NoteCardsPanel({ items, loading }: { items: Item[]; loading: boo
           </div>
         </div>
       </header>
+
+      {/* Always-on scratchpad — a single rough-notes surface that just retains.
+          Opens in the shared middle editor; not a real note or task. */}
+      <button
+        onClick={() => ui.openItem(SCRATCH_ID)}
+        aria-pressed={ui.openItemId === SCRATCH_ID}
+        className={`flex shrink-0 items-center gap-2 border-b border-subtle px-3 py-2 text-left text-sm transition-colors duration-fast hover:bg-overlay ${
+          ui.openItemId === SCRATCH_ID ? "bg-accent-soft text-ink" : "text-ink-secondary"
+        }`}
+      >
+        <Note size={14} className="shrink-0 text-accent" />
+        <span className="font-medium">Scratchpad</span>
+        <span className="truncate text-xs text-ink-muted">jot something quickly</span>
+      </button>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {loading ? (

@@ -13,10 +13,10 @@ import { CommandPalette } from "./components/CommandPalette";
 import { QuickCapture } from "./components/QuickCapture";
 import { Moon, PanelLeft, Plus, Sun } from "./components/icons";
 import { Tip } from "./components/ui";
-import { useCreateItem, useItems } from "./lib/queries";
+import { useCreateItem, useItems, useScratchpad } from "./lib/queries";
 import { bucketOf, filterItems, sortBuckets, sortItems } from "./lib/filters";
 import { getTheme, toggleTheme, type Theme } from "./lib/theme";
-import type { SortKey, View } from "./lib/types";
+import { SCRATCH_ID, type SortKey, type View } from "./lib/types";
 
 interface UIState {
   view: View;
@@ -183,8 +183,11 @@ export default function App() {
   );
 
   // A task (clicked in the task column) or a note (clicked in the note-cards
-  // panel) both open in the same shared middle editor.
-  const opened = items.find((i) => i.id === openItemId) ?? null;
+  // panel) both open in the same shared middle editor. The scratchpad opens
+  // there too, but lives outside the items list, so it's fetched on demand.
+  const scratchOpen = openItemId === SCRATCH_ID;
+  const { data: scratch } = useScratchpad(scratchOpen);
+  const opened = scratchOpen ? scratch ?? null : items.find((i) => i.id === openItemId) ?? null;
 
   const newButton =
     view === "notes" ? (
