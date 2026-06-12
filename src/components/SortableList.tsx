@@ -28,9 +28,12 @@ import { TaskRow } from "./TaskRow";
 export function SortableList({
   items,
   variant,
+  focusedId,
 }: {
   items: Item[];
   variant: "today" | "backlog";
+  /** Id of the keyboard-focused row, forwarded to TaskRow for the focus ring. */
+  focusedId?: string | null;
 }) {
   const updateItem = useUpdateItem();
   const sensors = useSensors(
@@ -63,7 +66,12 @@ export function SortableList({
       <SortableContext items={items.map((it) => it.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-1.5">
           {items.map((item) => (
-            <SortableTask key={item.id} item={item} variant={variant} />
+            <SortableTask
+              key={item.id}
+              item={item}
+              variant={variant}
+              focused={item.id === focusedId}
+            />
           ))}
         </div>
       </SortableContext>
@@ -71,7 +79,15 @@ export function SortableList({
   );
 }
 
-function SortableTask({ item, variant }: { item: Item; variant: "today" | "backlog" }) {
+function SortableTask({
+  item,
+  variant,
+  focused,
+}: {
+  item: Item;
+  variant: "today" | "backlog";
+  focused: boolean;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -96,7 +112,7 @@ function SortableTask({ item, variant }: { item: Item; variant: "today" | "backl
 
   return (
     <div ref={setNodeRef} style={style}>
-      <TaskRow item={item} variant={variant} dragHandle={handle} />
+      <TaskRow item={item} variant={variant} dragHandle={handle} focused={focused} />
     </div>
   );
 }

@@ -19,11 +19,15 @@ export function TaskRow({
   item,
   variant,
   dragHandle,
+  focused = false,
 }: {
   item: Item;
   variant: "today" | "backlog" | "history";
   /** When sortable, the grip handle to render at the row's left edge. */
   dragHandle?: React.ReactNode;
+  /** Keyboard-focused row: reveals the action cluster and rings the row, so
+   *  the list is fully operable from the keyboard (see TodayView). */
+  focused?: boolean;
 }) {
   const ui = useUI();
   const { data: tags = [] } = useTags();
@@ -53,9 +57,10 @@ export function TaskRow({
 
   return (
     <div
-      className={`group relative flex items-center gap-2.5 rounded-md border border-subtle px-3 py-2 transition-colors duration-fast hover:border-strong ${
-        carried > 0 ? "bg-accent-soft" : "bg-raised"
-      } ${struck ? "opacity-55" : ""}`}
+      data-focused={focused || undefined}
+      className={`group relative flex items-center gap-2.5 rounded-md border px-3 py-2 transition-colors duration-fast hover:border-strong ${
+        focused ? "border-[var(--accent)] ring-1 ring-[var(--accent)]" : "border-subtle"
+      } ${carried > 0 ? "bg-accent-soft" : "bg-raised"} ${struck ? "opacity-55" : ""}`}
     >
       {dragHandle}
       {variant === "today" && (
@@ -88,7 +93,7 @@ export function TaskRow({
       {/* Resting metadata: note dot, age badge, project chip. Compact, always
           visible. The hover actions overlay this cluster (see below) so they
           don't steal width from the title at rest. */}
-      <div className="flex shrink-0 items-center gap-2 transition-opacity duration-fast group-hover:opacity-0">
+      <div className="flex shrink-0 items-center gap-2 transition-opacity duration-fast group-hover:opacity-0 group-data-[focused]:opacity-0">
         {hasNotes && <Note size={12} className="text-ink-muted" aria-label="Has notes" />}
         {carried > 0 && (
           <span
@@ -114,7 +119,7 @@ export function TaskRow({
       {/* Hover/focus action cluster — overlaid on the right edge so it costs no
           title width at rest. Project menu lives here too (still clickable). */}
       {variant !== "history" && (
-        <div className="absolute right-2 flex items-center gap-1 rounded-md bg-raised pl-2 opacity-0 shadow-1 transition-opacity duration-fast focus-within:opacity-100 group-hover:opacity-100">
+        <div className="absolute right-2 flex items-center gap-1 rounded-md bg-raised pl-2 opacity-0 shadow-1 transition-opacity duration-fast focus-within:opacity-100 group-hover:opacity-100 group-data-[focused]:opacity-100">
           <ProjectMenu projects={projects} current={project} onSelect={setProject} />
           {variant === "today" && !done && (
             <button
@@ -166,7 +171,7 @@ function ProjectMenu({
           className={`chip shrink-0 cursor-pointer transition-all duration-fast hover:border-strong ${
             current
               ? ""
-              : "opacity-0 focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+              : "opacity-0 focus-visible:opacity-100 group-hover:opacity-100 group-data-[focused]:opacity-100 data-[state=open]:opacity-100"
           }`}
         >
           {current ? (
